@@ -1,4 +1,4 @@
-package com.user.mgmt.model;
+package com.user.mgmt.users;
 
 public class User {
     private String id;
