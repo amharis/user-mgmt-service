@@ -9,7 +9,7 @@ public class ErrorResponse {
     public enum ErrorMessages {
 
         UNAUTHENTICATED("Invalid API Key"),
-        UNAUTHORIZED("Forbidden. Insufficient Permissions");
+        FORBIDDEN("Forbidden. Insufficient Permissions");
 
         private final String errorMessage;
 
