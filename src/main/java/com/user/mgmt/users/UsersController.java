@@ -45,12 +45,17 @@ public class UsersController {
         logger.info("Here is bearer token: {}", bearerToken);
 
         Map<String, Object> deserializedTokenPayload = parseToken(bearerToken);
+        StringBuffer buf = new StringBuffer();
+        deserializedTokenPayload.forEach((k, v) -> buf.append(String.format("%s : %s ;", k, v)));
+
+        logger.info("Decoded token {}", buf.toString()); // should be removed
 
         // TODO add validation layer
 
         if (!authenticateRequest((String) deserializedTokenPayload.get(API_KEY))) {
             ErrorResponse errorMessage = new ErrorResponse(ErrorResponse.ErrorMessages.UNAUTHENTICATED.toString());
             try {
+                logger.error("Authentication failure!");
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, objectMapper.writeValueAsString(errorMessage));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
@@ -60,11 +65,13 @@ public class UsersController {
         if (!authorizeRequest((String) deserializedTokenPayload.get(ROLE))) {
             ErrorResponse errorMessage = new ErrorResponse(ErrorResponse.ErrorMessages.FORBIDDEN.toString());
             try {
+                logger.error("Authorization failure!");
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, objectMapper.writeValueAsString(errorMessage));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);
             }
         }
+        logger.info("Getting users");
         return userService.getUsers();
     }
 
@@ -80,6 +87,7 @@ public class UsersController {
             Map<String, Object> deserializedTokenPayload = objectMapper.readValue(decodedTokenString, Map.class);
             return deserializedTokenPayload;
         } catch (JsonProcessingException e) {
+            logger.error("Token parsing failed");
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, objectMapper.writeValueAsString(
                     new ErrorResponse("Failed to parse bearer token")));
         }
