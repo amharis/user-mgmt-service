@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -41,7 +42,7 @@ public class UsersController {
     }
 
     @GetMapping("/users")
-    public User[] getUsers(@RequestHeader("Authorization") String bearerToken) throws JsonProcessingException {
+    public ResponseEntity<?> getUsers(@RequestHeader("Authorization") String bearerToken) throws JsonProcessingException {
         logger.info("Here is bearer token: {}", bearerToken);
 
         Map<String, Object> deserializedTokenPayload = parseToken(bearerToken);
@@ -50,29 +51,19 @@ public class UsersController {
 
         logger.info("Decoded token {}", buf.toString()); // should be removed
 
-        // TODO add validation layer
 
         if (!authenticateRequest((String) deserializedTokenPayload.get(API_KEY))) {
-            ErrorResponse errorMessage = new ErrorResponse(ErrorResponse.ErrorMessages.UNAUTHENTICATED.toString());
-            try {
-                logger.error("Authentication failure!");
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, objectMapper.writeValueAsString(errorMessage));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            logger.error("Authentication failure!");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorResponse.ErrorMessages.UNAUTHENTICATED.toString());
         }
 
         if (!authorizeRequest((String) deserializedTokenPayload.get(ROLE))) {
-            ErrorResponse errorMessage = new ErrorResponse(ErrorResponse.ErrorMessages.FORBIDDEN.toString());
-            try {
-                logger.error("Authorization failure!");
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, objectMapper.writeValueAsString(errorMessage));
-            } catch (JsonProcessingException e) {
-                throw new RuntimeException(e);
-            }
+            logger.error("Authorization failure!");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ErrorResponse.ErrorMessages.FORBIDDEN.toString());
         }
+
         logger.info("Getting users");
-        return userService.getUsers();
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getUsers());
     }
 
     private Map<String, Object> parseToken(String bearerToken) throws JsonProcessingException {

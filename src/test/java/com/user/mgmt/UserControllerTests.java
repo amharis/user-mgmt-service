@@ -53,10 +53,8 @@ public class UserControllerTests {
         ResultActions response = mockMvc.perform(get("/users")
                 .header("Authorization", String.format("Bearer %s", encodedToken)));
         MockHttpServletResponse mockResponse = response.andReturn().getResponse();
-        final ErrorResponse errorResponse = objectMapper.readValue(mockResponse.getErrorMessage(), new TypeReference<ErrorResponse>() {
-        });
         Assertions.assertEquals(403, mockResponse.getStatus(), "unexpected response code");
-        Assertions.assertEquals(ErrorResponse.ErrorMessages.FORBIDDEN.toString(), errorResponse.getError());
+        Assertions.assertEquals(ErrorResponse.ErrorMessages.FORBIDDEN.toString(), mockResponse.getContentAsString());
     }
 
     @Test
@@ -65,11 +63,9 @@ public class UserControllerTests {
         ResultActions response = mockMvc.perform(get("/users")
                 .header("Authorization", String.format("Bearer %s", encodedToken)));
         MockHttpServletResponse mockResponse = response.andReturn().getResponse();
-        System.out.println("response: " + response.andReturn().getResponse().getErrorMessage());
-        final ErrorResponse errorResponse = objectMapper.readValue(mockResponse.getErrorMessage(), new TypeReference<ErrorResponse>() {
-        });
+        System.out.println("response: " + response.andReturn().getResponse().getContentAsString());
         Assertions.assertEquals(401, mockResponse.getStatus(), "unexpected response code");
-        Assertions.assertEquals(ErrorResponse.ErrorMessages.UNAUTHENTICATED.toString(), errorResponse.getError());
+        Assertions.assertEquals(ErrorResponse.ErrorMessages.UNAUTHENTICATED.toString(), mockResponse.getContentAsString());
     }
 
     @Test
@@ -78,11 +74,9 @@ public class UserControllerTests {
         ResultActions response = mockMvc.perform(get("/users")
                 .header("Authorization", String.format("Bearer %s", encodedToken)));
         MockHttpServletResponse mockResponse = response.andReturn().getResponse();
-        System.out.println("response: " + response.andReturn().getResponse().getErrorMessage());
-        final ErrorResponse errorResponse = objectMapper.readValue(mockResponse.getErrorMessage(), new TypeReference<ErrorResponse>() {
-        });
+        System.out.println("response: " + response.andReturn().getResponse().getContentAsString());
         Assertions.assertEquals(401, mockResponse.getStatus(), "unexpected response code");
-        Assertions.assertEquals(ErrorResponse.ErrorMessages.UNAUTHENTICATED.toString(), errorResponse.getError());
+        Assertions.assertEquals(ErrorResponse.ErrorMessages.UNAUTHENTICATED.toString(), mockResponse.getContentAsString());
     }
 
     @Test
@@ -91,17 +85,15 @@ public class UserControllerTests {
         ResultActions response = mockMvc.perform(get("/users")
                 .header("Authorization", String.format("Bearer %s", encodedToken)));
         MockHttpServletResponse mockResponse = response.andReturn().getResponse();
-        System.out.println("response: " + response.andReturn().getResponse().getErrorMessage());
-        final ErrorResponse errorResponse = objectMapper.readValue(mockResponse.getErrorMessage(), new TypeReference<ErrorResponse>() {
-        });
+        System.out.println("response: " + response.andReturn().getResponse().getContentAsString());
         Assertions.assertEquals(403, mockResponse.getStatus(), "unexpected response code");
-        Assertions.assertEquals(ErrorResponse.ErrorMessages.FORBIDDEN.toString(), errorResponse.getError());
+        Assertions.assertEquals(ErrorResponse.ErrorMessages.FORBIDDEN.toString(), mockResponse.getContentAsString());
     }
 
     String getEncodedBearerToken(@Nullable String apiKeyValue, @Nullable String roleValue) {
         final Map<String, String> payload = new HashMap<>();
 
-        if (roleValue != null) payload.put(API_KEY, apiKeyValue);
+        if (apiKeyValue != null) payload.put(API_KEY, apiKeyValue);
         if (roleValue != null) payload.put("role", roleValue);
 
         return getEncodedBearerToken(payload);

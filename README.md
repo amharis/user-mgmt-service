@@ -1,7 +1,38 @@
-##
+# User Management Service
 
-https://spring.io/guides/gs/spring-boot#scratch
+This is Java application built using Spring boot.
+The application exposes two GET endpoints
+- 
+- root endpoint for debugging
+````
+habdu@Mac user-mgmt-service % curl  http://localhost:8080/
+Greetings from User Management service!%
+````
 
+- users endpoint, expects a custom authorization header payload containing apikey and role properties.
+- a hard coded apikey is used for the purpose of this task -> "some-api-key"
+- the api expects a base64 encoded json payload as shown below
+
+```
+habdu@Mac user-mgmt-service % echo -n '{"apikey":"some-api-key", "role":"viewer"}' | base64
+eyJhcGlrZXkiOiJzb21lLWFwaS1rZXkiLCAicm9sZSI6InZpZXdlciJ9
+
+habdu@Mac user-mgmt-service % curl -H "Authorization: Bearer eyJhcGlrZXkiOiJzb21lLWFwaS1rZXkiLCAicm9sZSI6InZpZXdlciJ9" http://localhost:8080/users
+[{"id":"user1","username":"john.doe"},{"id":"user2","username":"jane.smith"}]%
+
+```
+## Important considerations
+
+The authentication task sets out a guideline to use authorization header for passing api key. However, that
+has consequences on adding authorization functionality.
+- whether keep using authorization header for only authentication payload i-e an apikey, and pass authorization
+data using other means like query param, request body etc
+- or use authorization header to carry additional payload than just apikey
+
+
+In context of OIDC and OAuth, access and id-tokens are used for passing authentication and authorization payloads.
+I have chosen to follow that approach and created a custom token payload inspired by above. I feel that is more
+inline with best practices
 
 ## Run / Test
 
@@ -9,9 +40,36 @@ https://spring.io/guides/gs/spring-boot#scratch
 > ./mvnw spring-boot:run
 
 - Using Docker
+```
+docker build -t haris/user-mgmt-service:v1 .
+docker run -p 8080:8080 haris/user-mgmt-service:v1
+```
 
-> docker build -t haris/user-mgmt-service:v1 .
-> docker run -p 8080:8080 haris/user-mgmt-service:v1
+## Sample testing commands
+
+```
+habdu@Mac user-mgmt-service % echo -n '{"apikey":"some-api-key", "role":"viewer"}' | base64
+eyJhcGlrZXkiOiJzb21lLWFwaS1rZXkiLCAicm9sZSI6InZpZXdlciJ9
+
+curl -H "Authorization: Bearer eyJhcGlrZXkiOiJzb21lLWFwaS1rZXkiLCAicm9sZSI6InZpZXdlciJ9" http://localhost:8080/users
+[{"id":"user1","username":"john.doe"},{"id":"user2","username":"jane.smith"}]%
+```
+
+```
+habdu@Mac user-mgmt-service % echo -n '{"apikey":"wrong-key", "role":"viewer"}' | base64
+eyJhcGlrZXkiOiJ3cm9uZy1rZXkiLCAicm9sZSI6InZpZXdlciJ9
+habdu@Mac user-mgmt-service %
+habdu@Mac user-mgmt-service % curl -H "Authorization: Bearer eyJhcGlrZXkiOiJ3cm9uZy1rZXkiLCAicm9sZSI6InZpZXdlciJ9" http://localhost:8080/users
+Invalid API Key%
+```
+
+```
+habdu@Mac user-mgmt-service % echo -n '{"apikey":"some-api-key", "role":"wrong"}' | base64
+eyJhcGlrZXkiOiJzb21lLWFwaS1rZXkiLCAicm9sZSI6Indyb25nIn0=
+habdu@Mac user-mgmt-service %
+habdu@Mac user-mgmt-service % curl  -H  "Authorization: Bearer eyJhcGlrZXkiOiJzb21lLWFwaS1rZXkiLCAicm9sZSI6Indyb25nIn0=" http://localhost:8080/users
+Forbidden, Insufficient Permissions%
+```
 
 ## Misc
 > curl -H "Authorization: Bearer <ACCESS_TOKEN>" http://localhost:8080/users
@@ -20,33 +78,6 @@ https://spring.io/guides/gs/spring-boot#scratch
 > echo -n '{"api-key":"some-api-key", "role":"viewer"}' | base64
 > base64 -d <<< SGVsbG8sIFdvcmxkIQo=
 
-### Sample testing commands
-
-```
-habdu@Mac user-mgmt-service % echo -n '{"api-key":"some-api-key", "role":"viewer"}' | base64
-eyJhcGkta2V5Ijoic29tZS1hcGkta2V5IiwgInJvbGUiOiJ2aWV3ZXIifQ==
-
-curl -H "Authorization: Bearer eyJhcGkta2V5Ijoic29tZS1hcGkta2V5IiwgInJvbGUiOiJ2aWV3ZXIifQ==" http://localhost:8080/users
-[{"id":"user1","username":"john.doe"},{"id":"user2","username":"jane.smith"}]%
-```
-
-```
-habdu@Mac user-mgmt-service % echo -n '{"api-key":"wrong-key", "role":"viewer"}' | base64
-eyJhcGkta2V5Ijoid3Jvbmcta2V5IiwgInJvbGUiOiJ2aWV3ZXIifQ==
-habdu@Mac user-mgmt-service %
-habdu@Mac user-mgmt-service %
-habdu@Mac user-mgmt-service % curl -H "Authorization: Bearer eyJhcGkta2V5Ijoid3Jvbmcta2V5IiwgInJvbGUiOiJ2aWV3ZXIifQ==" http://localhost:8080/users
-{"timestamp":"2025-01-14T21:22:30.164+00:00","status":401,"error":"Unauthorized","path":"/users"}%
-```
-
-```
-habdu@Mac user-mgmt-service % echo -n '{"api-key":"some-api-key", "role":"wrong"}' | base64
-eyJhcGkta2V5Ijoic29tZS1hcGkta2V5IiwgInJvbGUiOiJ3cm9uZyJ9
-habdu@Mac user-mgmt-service %
-habdu@Mac user-mgmt-service %
-habdu@Mac user-mgmt-service % curl -H "Authorization: Bearer eyJhcGkta2V5Ijoic29tZS1hcGkta2V5IiwgInJvbGUiOiJ3cm9uZyJ9" http://localhost:8080/users
-{"timestamp":"2025-01-14T21:23:44.615+00:00","status":403,"error":"Forbidden","path":"/users"}%
-```
 ## Description
 ```
 T ask:
