@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 
 @RestController
 public class UsersController {
-    public static final String API_KEY = "api-key";
+    public static final String API_KEY = "apikey";
     public static final String ROLE = "role";
     public static final String VIEWER_ROLE = "viewer";
 
